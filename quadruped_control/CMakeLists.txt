@@ -7,6 +7,17 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+
+add_executable(standing_pose_server src/standing_pose_server.cpp)
+ament_target_dependencies(standing_pose_server rclcpp std_srvs trajectory_msgs)
+
+install(
+  TARGETS standing_pose_server
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(
   DIRECTORY launch config urdf

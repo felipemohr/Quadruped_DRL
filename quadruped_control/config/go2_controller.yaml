@@ -5,10 +5,10 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    go2_trajectory_controller:
+    trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-go2_trajectory_controller:
+trajectory_controller:
   ros__parameters:
     joints:
       - FL_hip_joint
