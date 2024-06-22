@@ -1,0 +1,16 @@
+standing_pose_server:
+  ros__parameters:
+    standing_joint_positions:
+      FL_hip_joint: 0.0
+      FL_thigh_joint: 0.78
+      FL_calf_joint: -1.57
+      FR_hip_joint: 0.0
+      FR_thigh_joint: 0.78
+      FR_calf_joint: -1.57
+      RL_hip_joint: 0.0
+      RL_thigh_joint: 0.78
+      RL_calf_joint: -1.57
+      RR_hip_joint: 0.0
+      RR_thigh_joint: 0.78
+      RR_calf_joint: -1.57
+    seconds_to_stand: 3

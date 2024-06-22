@@ -1,9 +1,15 @@
+import os
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess, TimerAction
+from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+
+    quadruped_control_pkg_share = FindPackageShare("quadruped_control").find("quadruped_control")
+
+    standing_pose_config = os.path.join(quadruped_control_pkg_share, "config", "go2_standing_pose.yaml")
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -20,6 +26,7 @@ def generate_launch_description():
     standing_pose_server = Node(
         package="quadruped_control",
         executable="standing_pose_server",
+        parameters=[standing_pose_config],
     )
 
     standing_command = ExecuteProcess(
