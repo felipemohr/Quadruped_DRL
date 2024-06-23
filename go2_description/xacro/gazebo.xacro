@@ -5,6 +5,17 @@
         <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
           <parameters>$(find quadruped_control)/config/go2_controller.yaml</parameters>
         </plugin>
+
+        <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"/>
+    </gazebo>
+
+    <gazebo reference="imu_link">
+        <sensor name="imu_sensor" type="imu">
+            <always_on>1</always_on>
+            <update_rate>100</update_rate>
+            <visualize>true</visualize>
+            <topic>imu</topic>
+        </sensor>
     </gazebo>
 
     <gazebo reference="trunk">
@@ -28,7 +39,6 @@
     <gazebo reference="FL_hip">
         <mu1>0.2</mu1>
         <mu2>0.2</mu2>
-
     </gazebo>
     <gazebo reference="FL_thigh">
         <mu1>0.2</mu1>

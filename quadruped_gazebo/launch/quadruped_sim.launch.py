@@ -49,6 +49,8 @@ def generate_launch_description():
         arguments=[
             # Clock (IGN -> ROS2)
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+            # IMU (IGN -> ROS2)
+            "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
         ],
         output="screen",
     )
