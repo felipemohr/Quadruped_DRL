@@ -19,9 +19,7 @@ def generate_launch_description():
 
     # Gazebo Sim
     gz_sim = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(ros_gz_sim_pkg_share, "launch", "gz_sim.launch.py")
-        ),
+        PythonLaunchDescriptionSource(os.path.join(ros_gz_sim_pkg_share, "launch", "gz_sim.launch.py")),
         launch_arguments={"gz_args": "-r empty.sdf"}.items(),
     )
 
@@ -51,8 +49,29 @@ def generate_launch_description():
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             # IMU (IGN -> ROS2)
             "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
+            # Lidar (IGN -> ROS2)
+            "/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
+            "/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
         ],
         output="screen",
     )
 
-    return LaunchDescription([gz_sim, spawn, robot_state_publisher, gz_bridge])
+    # IMU tf2 Transform
+    tf2_imu_transform = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "imu_link", "go2/base/imu_sensor"],
+    )
+
+    # Lidar tf2 Transform
+    tf2_lidar_transform = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "lidar_link", "go2/base/gpu_lidar"],
+    )
+
+    return LaunchDescription(
+        [gz_sim, spawn, robot_state_publisher, gz_bridge, tf2_imu_transform, tf2_lidar_transform]
+    )

@@ -3,10 +3,13 @@
     
     <gazebo>
         <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
-          <parameters>$(find quadruped_control)/config/go2_controller.yaml</parameters>
+            <parameters>$(find quadruped_control)/config/go2_controller.yaml</parameters>
         </plugin>
-
+        
         <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"/>
+        <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
+            <render_engine>ogre2</render_engine>
+        </plugin>
     </gazebo>
 
     <gazebo reference="imu_link">
@@ -18,6 +21,42 @@
         </sensor>
     </gazebo>
 
+    <gazebo reference="lidar_link">
+        <sensor name='gpu_lidar' type='gpu_lidar'>"
+            <topic>lidar</topic>
+            <update_rate>4</update_rate>
+            <frame_id>lidar_link</frame_id>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>75</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.141592653</min_angle>
+                        <max_angle>3.141592653</max_angle>
+                    </horizontal>
+                    <vertical>
+                        <samples>72</samples>
+                        <resolution>1</resolution>
+                        <min_angle>0.0</min_angle>
+                        <max_angle>1.570796326</max_angle>
+                    </vertical>
+                </scan>
+                <range>
+                    <min>0.05</min>
+                    <max>30.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.02</stddev>
+                </noise>
+            </ray>
+            <always_on>1</always_on>
+            <visualize>true</visualize>
+        </sensor>
+    </gazebo>
+
     <gazebo reference="trunk">
         <mu1>0.2</mu1>
         <mu2>0.2</mu2>
@@ -25,12 +64,12 @@
         <kd  value="1.0"/>
     </gazebo>
 
-    <gazebo reference="stick_link">
+    <gazebo reference="imu_link">
         <mu1>0.2</mu1>
         <mu2>0.2</mu2>
     </gazebo>
 
-    <gazebo reference="imu_link">
+    <gazebo reference="lidar_link">
         <mu1>0.2</mu1>
         <mu2>0.2</mu2>
     </gazebo>
