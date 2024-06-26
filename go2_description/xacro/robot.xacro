@@ -112,6 +112,41 @@
         </collision>
     </link>
 
+    <joint name="camera_joint" type="fixed">
+        <parent link="trunk"/>
+        <child link="camera_link"/>
+        <origin rpy="0 0 0" xyz="0.326564 -0.000238 0.043"/>
+    </joint>
+
+    <link name="camera_link">
+        <inertial>
+            <mass value="0.001"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size=".001 .001 .001"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+        <parent link="camera_link"/>
+        <child link="camera_optical_link"/>
+    </joint>
+
+    <link name="camera_optical_link">
+    </link>
+
     <xacro:leg name="FR" mirror="-1" mirror_dae= "False" front_hind="1"  front_hind_dae="True"  />
     <xacro:leg name="FL" mirror="1"  mirror_dae="True"   front_hind="1"  front_hind_dae="True"  />
     <xacro:leg name="RR" mirror="-1" mirror_dae="False"  front_hind="-1" front_hind_dae="False" />

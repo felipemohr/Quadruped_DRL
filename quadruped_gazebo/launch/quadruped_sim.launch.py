@@ -52,6 +52,11 @@ def generate_launch_description():
             # Lidar (IGN -> ROS2)
             "/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
             "/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
+            # Camera (IGN -> ROS2)
+            "/rgbd_camera/image@sensor_msgs/msg/Image[gz.msgs.Image",
+            "/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
+            "/rgbd_camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image",
+            "/rgbd_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
         ],
         output="screen",
     )
@@ -72,6 +77,22 @@ def generate_launch_description():
         arguments=["0", "0", "0", "0", "0", "0", "lidar_link", "go2/base/gpu_lidar"],
     )
 
+    # Camera tf2 Transform
+    tf2_camera_transform = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "camera_link", "go2/base/rgbd_camera"],
+    )
+
     return LaunchDescription(
-        [gz_sim, spawn, robot_state_publisher, gz_bridge, tf2_imu_transform, tf2_lidar_transform]
+        [
+            gz_sim,
+            spawn,
+            robot_state_publisher,
+            gz_bridge,
+            tf2_imu_transform,
+            tf2_lidar_transform,
+            tf2_camera_transform,
+        ]
     )
