@@ -6,10 +6,55 @@
             <parameters>$(find quadruped_control)/config/go2_controller.yaml</parameters>
         </plugin>
         
+        <plugin filename="libFootSensorSystem.so" name="gz::sim::systems::FootSensorSystem"/>
         <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"/>
         <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
             <render_engine>ogre2</render_engine>
         </plugin>
+    </gazebo>
+
+    <gazebo reference="FR_calf">
+        <sensor name="FR_foot_contact" type="contact">
+            <update_rate>100</update_rate>
+            <always_on>1</always_on>
+            <topic>fr_foot</topic>
+            <contact>
+                <collision>FR_calf_fixed_joint_lump__FR_foot_collision_1</collision>
+            </contact>
+        </sensor>
+    </gazebo>
+
+    <gazebo reference="FL_calf">
+        <sensor name="FL_foot_contact" type="contact">
+            <update_rate>100</update_rate>
+            <always_on>1</always_on>
+            <topic>fl_foot</topic>
+            <contact>
+                <collision>FL_calf_fixed_joint_lump__FL_foot_collision_1</collision>
+            </contact>
+        </sensor>
+    </gazebo>
+
+    <gazebo reference="RR_calf">
+        <sensor name="RR_foot_contact" type="contact">
+            <update_rate>100</update_rate>
+            <always_on>1</always_on>
+            <topic>rr_foot</topic>
+            <contact>
+                <collision>RR_calf_fixed_joint_lump__RR_foot_collision_1</collision>
+            </contact>
+        </sensor>
+    </gazebo>
+
+    <gazebo reference="RL_calf">
+        <sensor name="RL_foot_contact" type="contact">
+            <update_rate>100</update_rate>
+            <always_on>1</always_on>
+            <topic>rl_foot</topic>
+            <contact>
+                <collision>RL_calf_fixed_joint_lump__RL_foot_collision_1</collision>
+            </contact>
+        </sensor>
     </gazebo>
 
     <gazebo reference="imu_link">
