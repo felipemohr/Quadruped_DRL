@@ -23,25 +23,45 @@
 
 #include "FootSensorSystem.hh"
 
+#include <string>
+#include <vector>
+
 #include <gz/common/Console.hh>
 #include <gz/common/Profiler.hh>
 #include <gz/plugin/Register.hh>
 
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Util.hh>
+#include <gz/sim/components/Collision.hh>
+#include <gz/sim/components/ContactSensorData.hh>
+#include <gz/sim/components/Link.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/ParentEntity.hh>
 
 using namespace gz;
 using namespace gz::sim;
 using namespace systems;
 
 //////////////////////////////////////////////////
-void FootSensor::Publish(const std::chrono::steady_clock::duration &_now)
+void FootSensor::Load(const std::string &_topic, const Entity &_collisionEntity)
 {
-  *boolMsg.mutable_header()->mutable_stamp() = ignition::msgs::Convert(_now);
-  *wrenchMsg.mutable_header()->mutable_stamp() = ignition::msgs::Convert(_now);
+  this->collisionEntity = _collisionEntity;
+  this->contactSensor = std::move(std::make_unique<gz::sim::components::ContactSensor>());
+  this->contactPub = this->node.Advertise<ignition::msgs::Boolean>(_topic + "/contact");
+  this->forcePub = this->node.Advertise<ignition::msgs::Wrench>(_topic + "/force");
+}
 
-  contactPub.Publish(boolMsg);
-  forcePub.Publish(wrenchMsg);
+//////////////////////////////////////////////////
+void FootSensor::Publish(const UpdateInfo &_info, const EntityComponentManager &_ecm)
+{
+  *this->boolMsg.mutable_header()->mutable_stamp() = ignition::msgs::Convert(_info.simTime);
+  *this->wrenchMsg.mutable_header()->mutable_stamp() = ignition::msgs::Convert(_info.simTime);
+
+  auto contacts = _ecm.Component<components::ContactSensorData>(this->collisionEntity);
+  this->boolMsg.set_data(contacts->Data().contact_size() > 0);
+
+  this->contactPub.Publish(this->boolMsg);
+  this->forcePub.Publish(this->wrenchMsg);
 }
 
 //////////////////////////////////////////////////
@@ -51,7 +71,7 @@ FootSensorSystem::FootSensorSystem()
 }
 
 //////////////////////////////////////////////////
-void FootSensorSystem::Configure(const Entity &_entity, const std::shared_ptr<const sdf::Element> &,
+void FootSensorSystem::Configure(const Entity &, const std::shared_ptr<const sdf::Element> &,
                                  EntityComponentManager &_ecm, EventManager &)
 {
   IGN_PROFILE("FootSensorSystem::Configure");
@@ -60,20 +80,36 @@ void FootSensorSystem::Configure(const Entity &_entity, const std::shared_ptr<co
       [&](const gz::sim::Entity &_entity,
           const gz::sim::components::ContactSensor *_contact) -> bool
       {
+        // Check if the parent entity is a link
+        auto *parentEntity = _ecm.Component<components::ParentEntity>(_entity);
+        if (parentEntity == nullptr)
+          return true;
+
+        // Contact sensors should only be attached to links
+        auto *linkComp = _ecm.Component<components::Link>(parentEntity->Data());
+        if (linkComp == nullptr)
+          return true;
+
+        // Only the first collision element is used
+        auto collisionElem = _contact->Data()->GetElement("contact")->GetElement("collision");
+        auto collisionName = collisionElem->Get<std::string>();
+
+        auto childEntities = _ecm.ChildrenByComponents(
+            parentEntity->Data(), components::Collision(), components::Name(collisionName));
+        auto collisionEntity = childEntities.front();
+
+        // Create component to be filled by physics
+        if (!childEntities.empty())
+          _ecm.CreateComponent(collisionEntity, components::ContactSensorData());
+
         std::string sensorName = gz::sim::scopedName(_entity, _ecm, "/", false);
         std::string tmpTopic = _contact->Data()->Get<std::string>("topic", "__default__").first;
 
         std::string topicName = tmpTopic == "__default__" ? sensorName : tmpTopic;
 
-        ignerr << topicName << std::endl;
-
         auto sensor = std::make_unique<FootSensor>();
-        sensor->contactSensor = std::move(std::make_unique<gz::sim::components::ContactSensor>());
-        sensor->contactPub =
-            this->dataPtr->node.Advertise<ignition::msgs::Boolean>(topicName + "/contact");
-        sensor->forcePub =
-            this->dataPtr->node.Advertise<ignition::msgs::Wrench>(topicName + "/force");
 
+        sensor->Load(topicName, collisionEntity);
         this->dataPtr->entitySensorMap.insert(std::make_pair(_entity, std::move(sensor)));
 
         return true;
@@ -81,28 +117,21 @@ void FootSensorSystem::Configure(const Entity &_entity, const std::shared_ptr<co
 }
 
 //////////////////////////////////////////////////
-void FootSensorSystem::PreUpdate(const UpdateInfo &, EntityComponentManager &_ecm)
-{
-  IGN_PROFILE("FootSensorSystem::PreUpdate");
-}
-
-//////////////////////////////////////////////////
-void FootSensorSystem::PostUpdate(const UpdateInfo &_info, const EntityComponentManager &)
+void FootSensorSystem::PostUpdate(const UpdateInfo &_info, const EntityComponentManager &_ecm)
 {
   IGN_PROFILE("FootSensorSystem::PostUpdate");
 
   if (!_info.paused)
   {
-
     for (auto &it : this->dataPtr->entitySensorMap)
     {
       // Publish sensor data
-      it.second->Publish(_info.simTime);
+      it.second->Publish(_info, _ecm);
     }
   }
 }
 
 IGNITION_ADD_PLUGIN(FootSensorSystem, gz::sim::System, FootSensorSystem::ISystemConfigure,
-                    FootSensorSystem::ISystemPreUpdate, FootSensorSystem::ISystemPostUpdate)
+                    FootSensorSystem::ISystemPostUpdate)
 
 IGNITION_ADD_PLUGIN_ALIAS(FootSensorSystem, "gz::sim::systems::FootSensorSystem")

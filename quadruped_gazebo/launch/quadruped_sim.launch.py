@@ -57,6 +57,11 @@ def generate_launch_description():
             "/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
             "/rgbd_camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image",
             "/rgbd_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
+            # Foot Contacts (IGN -> ROS2)
+            "/fr_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
+            "/fl_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
+            "/rr_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
+            "/rl_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
         ],
         output="screen",
     )

@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef GZ_GTAZEBO_SYSTEM_FOOT_SENSOR_HH_
-#define GZ_GTAZEBO_SYSTEM_FOOT_SENSOR_HH_
+#ifndef GZ_GAZEBO_SYSTEMS_FOOT_SENSOR_HH_
+#define GZ_GAZEBO_SYSTEMS_FOOT_SENSOR_HH_
 
 #include <memory>
 #include <unordered_map>
@@ -48,11 +48,20 @@ class FootSensor
 {
 public:
   /**
-   * @brief Publishes contact and force data
+   * @brief Load the Foot sensor with the collisionEntites from the Contact sensor
    *
-   * @param _now The current time
+   * @param _topic String with the topic name
+   * @param _collisionEntity The entity that act as contact
    */
-  void Publish(const std::chrono::steady_clock::duration &_now);
+  void Load(const std::string &_topic, const Entity &_collisionEntity);
+
+  /**
+   * @brief Publish contact and force data
+   *
+   * @param _info The UpdateInfo of the given simulation
+   * @param _ecm The EntityComponentManager of the given simulation
+   */
+  void Publish(const UpdateInfo &_info, const EntityComponentManager &_ecm);
 
   /** @brief Contact sensor component */
   std::unique_ptr<gz::sim::components::ContactSensor> contactSensor;
@@ -63,7 +72,13 @@ public:
   /** @brief Ign transport publisher to publish wrench messages */
   gz::transport::Node::Publisher forcePub;
 
+  /** @brief Entitity for which the Contact sensor publishes data */
+  Entity collisionEntity;
+
 private:
+  /** @brief Ign transport node */
+  gz::transport::Node node;
+
   /** @brief Boolean message to publish sensor contact data */
   ignition::msgs::Boolean boolMsg;
 
@@ -76,14 +91,10 @@ class FootSensorSystemPrivate
 public:
   /** @brief A map of Contact entity to its Foot sensor */
   std::unordered_map<Entity, std::unique_ptr<FootSensor>> entitySensorMap;
-
-  /** @brief Ign transport node */
-  gz::transport::Node node;
 };
 
 class FootSensorSystem : public gz::sim::System,
                          public gz::sim::ISystemConfigure,
-                         public gz::sim::ISystemPreUpdate,
                          public gz::sim::ISystemPostUpdate
 {
 public:
@@ -96,9 +107,6 @@ public:
   /** Documentation inherited */
   void Configure(const Entity &_entity, const std::shared_ptr<const sdf::Element> &_sdf,
                  EntityComponentManager &_ecm, EventManager &_eventMgr) final;
-
-  /** Documentation inherited */
-  void PreUpdate(const UpdateInfo &_info, EntityComponentManager &_ecm) final;
 
   /** Documentation inherited */
   void PostUpdate(const UpdateInfo &_info, const EntityComponentManager &_ecm) final;
