@@ -1,11 +1,11 @@
 #include "rclcpp/rclcpp.hpp"
-#include "std_srvs/srv/trigger.hpp" 
+#include "std_srvs/srv/trigger.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
-#include <memory>
-#include <vector>
-#include <string>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 int main(int argc, char **argv)
 {
@@ -13,13 +13,11 @@ int main(int argc, char **argv)
 
   std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("standing_pose_server");
 
-  std::map<std::string, double> default_standing_joint_positions
-  {
-    {"FL_hip_joint", 0.0}, {"FL_thigh_joint", 0.78}, {"FL_calf_joint", -1.57},
-    {"FR_hip_joint", 0.0}, {"FR_thigh_joint", 0.78}, {"FR_calf_joint", -1.57},
-    {"RL_hip_joint", 0.0}, {"RL_thigh_joint", 0.78}, {"RL_calf_joint", -1.57},
-    {"RR_hip_joint", 0.0}, {"RR_thigh_joint", 0.78}, {"RR_calf_joint", -1.57}
-  };
+  std::map<std::string, double> default_standing_joint_positions{
+      {"FL_hip_joint", 0.0}, {"FL_thigh_joint", 0.78}, {"FL_calf_joint", -1.57},
+      {"FR_hip_joint", 0.0}, {"FR_thigh_joint", 0.78}, {"FR_calf_joint", -1.57},
+      {"RL_hip_joint", 0.0}, {"RL_thigh_joint", 0.78}, {"RL_calf_joint", -1.57},
+      {"RR_hip_joint", 0.0}, {"RR_thigh_joint", 0.78}, {"RR_calf_joint", -1.57}};
 
   int32_t seconds_to_stand;
   std::map<std::string, double> standing_joint_positions;
@@ -47,25 +45,25 @@ int main(int argc, char **argv)
   standing_pose_msg.points.push_back(joint_point);
 
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_trajectory_publisher =
-    node->create_publisher<trajectory_msgs::msg::JointTrajectory>("trajectory_controller/joint_trajectory", 10);
+      node->create_publisher<trajectory_msgs::msg::JointTrajectory>(
+          "trajectory_controller/joint_trajectory", 10);
 
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service = 
-    node->create_service<std_srvs::srv::Trigger>(
-      "standing_pose", 
-      [node, standing_pose_msg, joint_trajectory_publisher]
-      (const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-             std::shared_ptr<std_srvs::srv::Trigger::Response> response)
-      {
-        (void) request;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service =
+      node->create_service<std_srvs::srv::Trigger>(
+          "standing_pose",
+          [node, standing_pose_msg, joint_trajectory_publisher](
+              const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+              std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+          {
+            (void)request;
 
-        joint_trajectory_publisher->publish(standing_pose_msg);
+            joint_trajectory_publisher->publish(standing_pose_msg);
 
-        response->success = true;
-        response->message = "Quadruped reseting to standing pose";
+            response->success = true;
+            response->message = "Quadruped reseting to standing pose";
 
-        RCLCPP_INFO(node->get_logger(), response->message.c_str());
-      }
-    );
+            RCLCPP_INFO(node->get_logger(), response->message.c_str());
+          });
 
   RCLCPP_INFO(node->get_logger(), "Standing Pose Server ready!");
 
