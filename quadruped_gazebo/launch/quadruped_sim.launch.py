@@ -11,11 +11,15 @@ def generate_launch_description():
 
     ros_gz_sim_pkg_share = FindPackageShare("ros_gz_sim").find("ros_gz_sim")
     go2_description_pkg_share = FindPackageShare("go2_description").find("go2_description")
+    quadruped_gazebo_pkg_share = FindPackageShare("quadruped_gazebo").find("quadruped_gazebo")
 
     robot_description_file = os.path.join(go2_description_pkg_share, "xacro", "robot.xacro")
 
     robot_description_config = xacro.process_file(robot_description_file)
     robot_description_dict = {"robot_description": robot_description_config.toxml()}
+
+    gz_bridge_config = os.path.join(quadruped_gazebo_pkg_share, "config", "gz_bridge.yaml")
+    gz_bridge_dict = {"config_file": gz_bridge_config}
 
     # Gazebo Sim
     gz_sim = IncludeLaunchDescription(
@@ -44,25 +48,7 @@ def generate_launch_description():
     gz_bridge = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=[
-            # Clock (IGN -> ROS2)
-            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
-            # IMU (IGN -> ROS2)
-            "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
-            # Lidar (IGN -> ROS2)
-            "/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan",
-            "/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
-            # Camera (IGN -> ROS2)
-            "/rgbd_camera/image@sensor_msgs/msg/Image[gz.msgs.Image",
-            "/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
-            "/rgbd_camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image",
-            "/rgbd_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
-            # Foot Contacts (IGN -> ROS2)
-            "/fr_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
-            "/fl_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
-            "/rr_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
-            "/rl_foot/contact@std_msgs/msg/Bool[gz.msgs.Boolean",
-        ],
+        parameters=[gz_bridge_dict],
         output="screen",
     )
 

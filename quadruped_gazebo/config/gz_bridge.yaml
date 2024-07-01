@@ -1,0 +1,82 @@
+- gz_topic_name: "/clock"
+  ros_topic_name: "/clock"
+  gz_type_name: "gz.msgs.Clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  direction: GZ_TO_ROS
+
+# IMU
+- gz_topic_name: "/imu"
+  ros_topic_name: "/imu"
+  gz_type_name: "gz.msgs.IMU"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  direction: GZ_TO_ROS
+
+# Lidar scan
+- gz_topic_name: "/lidar"
+  ros_topic_name: "/lidar"
+  gz_type_name: "gz.msgs.LaserScan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  direction: GZ_TO_ROS
+
+# Lidar point cloud
+- gz_topic_name: "/lidar/points"
+  ros_topic_name: "/lidar/points"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  direction: GZ_TO_ROS
+
+# Camera image
+- gz_topic_name: "/rgbd_camera/image"
+  ros_topic_name: "/rgbd_camera/image"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+# Camera info
+- gz_topic_name: "/rgbd_camera/camera_info"
+  ros_topic_name: "/rgbd_camera/camera_info"
+  gz_type_name: "gz.msgs.CameraInfo"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  direction: GZ_TO_ROS
+
+# Camera depth map
+- gz_topic_name: "/rgbd_camera/depth_image"
+  ros_topic_name: "/rgbd_camera/depth_image"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+# Camera point cloud
+- gz_topic_name: "/rgbd_camera/points"
+  ros_topic_name: "/rgbd_camera/points"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  direction: GZ_TO_ROS
+
+# Front right foot contact
+- gz_topic_name: "/fr_foot/contact"
+  ros_topic_name: "/fr_foot/contact"
+  gz_type_name: "gz.msgs.Boolean"
+  ros_type_name: "std_msgs/msg/Bool"
+  direction: GZ_TO_ROS
+
+# Front left foot contact
+- gz_topic_name: "/fl_foot/contact"
+  ros_topic_name: "/fl_foot/contact"
+  gz_type_name: "gz.msgs.Boolean"
+  ros_type_name: "std_msgs/msg/Bool"
+  direction: GZ_TO_ROS
+
+# Rear left foot contact
+- gz_topic_name: "/rl_foot/contact"
+  ros_topic_name: "/rl_foot/contact"
+  gz_type_name: "gz.msgs.Boolean"
+  ros_type_name: "std_msgs/msg/Bool"
+  direction: GZ_TO_ROS
+
+  # Rear right foot contact
+- gz_topic_name: "/rr_foot/contact"
+  ros_topic_name: "/rr_foot/contact"
+  gz_type_name: "gz.msgs.Boolean"
+  ros_type_name: "std_msgs/msg/Bool"
+  direction: GZ_TO_ROS
