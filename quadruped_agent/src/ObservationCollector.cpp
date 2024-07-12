@@ -1,3 +1,14 @@
+/**
+ * @file ObservationCollector.cpp
+ * @author Felipe Mohr (felipe18mohr@gmail.com)
+ * @brief Node to collect all the observations for the Agent
+ * @version 1.0
+ * @date 2024-07-11
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #include "rclcpp/rclcpp.hpp"
 
 #include "quadruped_agent/ObservationCollector.hpp"
@@ -41,6 +52,11 @@ ObservationCollector::ObservationCollector() : Node("observation_collector")
   observation_timer_ =
       this->create_wall_timer(30ms, std::bind(&ObservationCollector::publishObservation, this));
 
+  joint_order_map_ = {{"FL_hip_joint", 0}, {"FL_thigh_joint", 1},  {"FL_calf_joint", 2},
+                      {"FR_hip_joint", 3}, {"FR_thigh_joint", 4},  {"FR_calf_joint", 5},
+                      {"RL_hip_joint", 6}, {"RL_thigh_joint", 7},  {"RL_calf_joint", 8},
+                      {"RR_hip_joint", 9}, {"RR_thigh_joint", 10}, {"RR_calf_joint", 11}};
+
   RCLCPP_INFO(this->get_logger(), "Observation Collector started");
 }
 
@@ -73,7 +89,16 @@ void ObservationCollector::baseVelCallback(const geometry_msgs::msg::Twist::Shar
 
 void ObservationCollector::jointStatesCallbadk(const sensor_msgs::msg::JointState::SharedPtr msg)
 {
-  // TODO
+  for (size_t msg_idx = 0; msg_idx < msg->name.size(); ++msg_idx)
+  {
+    std::string joint_name = msg->name.at(msg_idx);
+    if (joint_order_map_.find(joint_name) != joint_order_map_.end())
+    {
+      size_t index = joint_order_map_[joint_name];
+      full_obs_msg_.joints_obs.position.at(index) = msg->position.at(msg_idx);
+      full_obs_msg_.joints_obs.velocity.at(index) = msg->velocity.at(msg_idx);
+    }
+  }
 }
 
 void ObservationCollector::feetFLContactCallback(const std_msgs::msg::Bool::SharedPtr msg)

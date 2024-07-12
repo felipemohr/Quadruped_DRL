@@ -1,5 +1,17 @@
+/**
+ * @file VelocityEstimator.cpp
+ * @author Felipe Mohr (felipe18mohr@gmail.com)
+ * @brief Node the estimate the base velocity of the Agent
+ * @version 1.0
+ * @date 2024-07-11
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+
 #include "quadruped_estimator/VelocityEstimator.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "tf2_eigen/tf2_eigen.hpp"
 
 #include <Eigen/Dense>
 
@@ -29,15 +41,14 @@ VelocityEstimator::~VelocityEstimator() {}
 
 void VelocityEstimator::IMUCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
-  // TODO: Use tf2_eigen
   // TODO: Publish base_observation (?)
-  Eigen::Vector3d accel(msg->linear_acceleration.x, msg->linear_acceleration.y,
-                        msg->linear_acceleration.z);
+  Eigen::Vector3d accel;
+  tf2::fromMsg(msg->linear_acceleration, accel);
 
-  Eigen::Quaterniond quaternion(msg->orientation.w, msg->orientation.x, msg->orientation.y,
-                                msg->orientation.z);
+  Eigen::Quaterniond quaternion;
+  tf2::fromMsg(msg->orientation, quaternion);
+
   Eigen::Matrix3d rotation_matrix = quaternion.toRotationMatrix();
-
   Eigen::Vector3d gravity_vector(0.0, 0.0, 9.80);
   Eigen::Vector3d accel_transformed = rotation_matrix * accel - gravity_vector;
 
@@ -46,9 +57,7 @@ void VelocityEstimator::IMUCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
   vel_state_ += dt * accel_transformed;
   last_time_ = this->now();
 
-  vel_msg_.linear.x = vel_state_.x();
-  vel_msg_.linear.y = vel_state_.y();
-  vel_msg_.linear.z = vel_state_.z();
+  tf2::toMsg(vel_state_, vel_msg_.linear);
   vel_msg_.angular = msg->angular_velocity;
 }
 

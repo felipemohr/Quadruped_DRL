@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
@@ -16,7 +17,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(include)
 
 add_executable(velocity_estimator src/VelocityEstimator.cpp)
-ament_target_dependencies(velocity_estimator Eigen3 rclcpp sensor_msgs geometry_msgs)
+ament_target_dependencies(velocity_estimator Eigen3 rclcpp tf2_eigen sensor_msgs geometry_msgs)
 
 install(
   TARGETS velocity_estimator
