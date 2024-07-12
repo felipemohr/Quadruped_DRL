@@ -38,7 +38,7 @@ def generate_launch_description():
         [
             joint_state_broadcaster_spawner,
             trajectory_controller_spawner,
-            TimerAction(period=2.5, actions=[standing_pose_server]),
-            TimerAction(period=5.0, actions=[standing_command]),
+            TimerAction(period=1.0, actions=[standing_pose_server]),
+            TimerAction(period=2.0, actions=[standing_command]),
         ]
     )

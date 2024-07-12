@@ -31,6 +31,8 @@ AgentController::AgentController() : Node("agent_controller")
       {"FR_hip_joint", -0.1}, {"FR_thigh_joint", 0.8}, {"FR_calf_joint", -1.5},
       {"RL_hip_joint", 0.1},  {"RL_thigh_joint", 1.0}, {"RL_calf_joint", -1.5},
       {"RR_hip_joint", -0.1}, {"RR_thigh_joint", 1.0}, {"RR_calf_joint", -1.5}};
+
+  RCLCPP_INFO(this->get_logger(), "Agent Controller started");
 }
 
 void AgentController::jointActionCallback(
@@ -62,7 +64,7 @@ AgentController::~AgentController() {}
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::shared_ptr<AgentController>();
+  auto node = std::make_shared<AgentController>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;
