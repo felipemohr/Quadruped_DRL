@@ -1,0 +1,5 @@
+quadruped_interfaces/CommandObservation cmd_vel
+quadruped_interfaces/BaseObservation base_obs
+quadruped_interfaces/JointsObservation joints_obs
+quadruped_interfaces/FeetObservation feet_obs
+quadruped_interfaces/JointsAction last_action

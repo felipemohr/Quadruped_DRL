@@ -1,0 +1,3 @@
+float64 linear_velocity_x
+float64 linear_velocity_y
+float64 angular_velocity_z
