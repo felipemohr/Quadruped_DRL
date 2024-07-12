@@ -29,6 +29,8 @@ VelocityEstimator::~VelocityEstimator() {}
 
 void VelocityEstimator::IMUCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
+  // TODO: Use tf2_eigen
+  // TODO: Publish base_observation (?)
   Eigen::Vector3d accel(msg->linear_acceleration.x, msg->linear_acceleration.y,
                         msg->linear_acceleration.z);
 
