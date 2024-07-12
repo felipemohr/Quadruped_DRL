@@ -37,14 +37,17 @@ ObservationCollector::ObservationCollector() : Node("observation_collector")
   joint_states_subscriber_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&ObservationCollector::jointStatesCallbadk, this, _1));
 
-  feet_fl_subscriber = this->create_subscription<std_msgs::msg::Bool>(
+  feet_fl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
       "fl_foot/contact", 10, std::bind(&ObservationCollector::feetFLContactCallback, this, _1));
-  feet_fr_subscriber = this->create_subscription<std_msgs::msg::Bool>(
+  feet_fr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
       "fr_foot/contact", 10, std::bind(&ObservationCollector::feetFRContactCallback, this, _1));
-  feet_rl_subscriber = this->create_subscription<std_msgs::msg::Bool>(
+  feet_rl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
       "rl_foot/contact", 10, std::bind(&ObservationCollector::feetRLContactCallback, this, _1));
-  feet_rr_subscriber = this->create_subscription<std_msgs::msg::Bool>(
+  feet_rr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
       "rr_foot/contact", 10, std::bind(&ObservationCollector::feetRRContactCallback, this, _1));
+
+  action_subscriber_ = this->create_subscription<quadruped_interfaces::msg::JointsAction>(
+      "agent_action", 10, std::bind(&ObservationCollector::lastActionCallback, this, _1));
 
   obs_publisher_ =
       this->create_publisher<quadruped_interfaces::msg::FullObservation>("observation_state", 10);
@@ -119,6 +122,12 @@ void ObservationCollector::feetRLContactCallback(const std_msgs::msg::Bool::Shar
 void ObservationCollector::feetRRContactCallback(const std_msgs::msg::Bool::SharedPtr msg)
 {
   full_obs_msg_.feet_obs.contact.at(3) = msg->data;
+}
+
+void ObservationCollector::lastActionCallback(
+    const quadruped_interfaces::msg::JointsAction::SharedPtr msg)
+{
+  full_obs_msg_.last_action = *msg;
 }
 
 void ObservationCollector::publishObservation() { obs_publisher_->publish(full_obs_msg_); }

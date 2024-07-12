@@ -20,6 +20,7 @@
 #include "std_msgs/msg/bool.hpp"
 
 #include "quadruped_interfaces/msg/full_observation.hpp"
+#include "quadruped_interfaces/msg/joints_action.hpp"
 
 #include <map>
 #include <memory>
@@ -81,6 +82,12 @@ private:
    * @param msg A shared pointer to the incoming Bool message
    */
   void feetRRContactCallback(const std_msgs::msg::Bool::SharedPtr msg);
+  /**
+   * @brief Callback function to collect the last action data
+   *
+   * @param msg A shared pointer to the Joints Action message
+   */
+  void lastActionCallback(const quadruped_interfaces::msg::JointsAction::SharedPtr msg);
 
   /** @brief Publishes the collected observation */
   void publishObservation();
@@ -100,13 +107,15 @@ private:
   /** @brief Subscription to joint states data */
   std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::JointState>> joint_states_subscriber_;
   /** @brief Subscription to front left contact data */
-  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_fl_subscriber;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_fl_subscriber_;
   /** @brief Subscription to front right contact data */
-  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_fr_subscriber;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_fr_subscriber_;
   /** @brief Subscription to rear left contact data */
-  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_rl_subscriber;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_rl_subscriber_;
   /** @brief Subscription to rear right contact data */
-  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_rr_subscriber;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Bool>> feet_rr_subscriber_;
+  /** @brief Subscription to last action data */
+  std::shared_ptr<rclcpp::Subscription<quadruped_interfaces::msg::JointsAction>> action_subscriber_;
 
   /** @brief Publisher for the full observation */
   std::shared_ptr<rclcpp::Publisher<quadruped_interfaces::msg::FullObservation>> obs_publisher_;

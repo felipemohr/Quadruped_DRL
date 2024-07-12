@@ -12,6 +12,7 @@ find_package(tf2 REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 find_package(quadruped_interfaces REQUIRED)
 
 include_directories(include)
@@ -21,8 +22,13 @@ ament_target_dependencies(observation_collector
   rclcpp tf2 std_msgs sensor_msgs geometry_msgs quadruped_interfaces
 )
 
+add_executable(agent_controller src/AgentController.cpp)
+ament_target_dependencies(agent_controller 
+  rclcpp trajectory_msgs quadruped_interfaces
+)
+
 install(
-  TARGETS observation_collector
+  TARGETS observation_collector agent_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 
