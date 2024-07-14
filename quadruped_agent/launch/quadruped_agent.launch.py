@@ -15,4 +15,8 @@ def generate_launch_description():
         package="quadruped_agent", executable="agent_controller", name="agent_controller", output="both"
     )
 
-    return LaunchDescription([observation_collector, agent_controller])
+    agent_node = Node(
+        package="quadruped_agent", executable="agent_node.py", name="agent_node", output="both"
+    )
+
+    return LaunchDescription([observation_collector, agent_controller, agent_node])
