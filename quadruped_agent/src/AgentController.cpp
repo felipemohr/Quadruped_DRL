@@ -53,7 +53,6 @@ void AgentController::jointActionCallback(
     idx++;
   }
 
-  trajectory_msg.header.stamp = this->now();
   trajectory_msg.points.push_back(trajectory_point);
 
   trajectory_publisher_->publish(trajectory_msg);

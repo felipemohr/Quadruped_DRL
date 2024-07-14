@@ -3,3 +3,4 @@ quadruped_interfaces/BaseObservation base_obs
 quadruped_interfaces/JointsObservation joints_obs
 quadruped_interfaces/FeetObservation feet_obs
 quadruped_interfaces/JointsAction last_action
+float64[] full_observation

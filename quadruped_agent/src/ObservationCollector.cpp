@@ -130,7 +130,46 @@ void ObservationCollector::lastActionCallback(
   full_obs_msg_.last_action = *msg;
 }
 
-void ObservationCollector::publishObservation() { obs_publisher_->publish(full_obs_msg_); }
+void ObservationCollector::publishObservation()
+{
+  auto cmd_vel = full_obs_msg_.cmd_vel;
+  auto base_obs = full_obs_msg_.base_obs;
+  auto joints_obs = full_obs_msg_.joints_obs;
+  auto feet_obs = full_obs_msg_.feet_obs;
+  auto last_action = full_obs_msg_.last_action;
+
+  std::vector<double> observation_vector;
+  observation_vector.push_back(cmd_vel.linear_velocity_x);
+  observation_vector.push_back(cmd_vel.linear_velocity_y);
+  observation_vector.push_back(cmd_vel.angular_velocity_z);
+
+  observation_vector.push_back(base_obs.linear_velocity.x);
+  observation_vector.push_back(base_obs.linear_velocity.y);
+  observation_vector.push_back(base_obs.linear_velocity.z);
+
+  observation_vector.push_back(base_obs.angular_velocity.x);
+  observation_vector.push_back(base_obs.angular_velocity.y);
+  observation_vector.push_back(base_obs.angular_velocity.z);
+
+  observation_vector.push_back(base_obs.projected_gravity.x);
+  observation_vector.push_back(base_obs.projected_gravity.y);
+  observation_vector.push_back(base_obs.projected_gravity.z);
+
+  observation_vector.insert(observation_vector.end(), joints_obs.position.begin(),
+                            joints_obs.position.end());
+  observation_vector.insert(observation_vector.end(), joints_obs.velocity.begin(),
+                            joints_obs.velocity.end());
+
+  observation_vector.insert(observation_vector.end(), feet_obs.contact.begin(),
+                            feet_obs.contact.end());
+
+  observation_vector.insert(observation_vector.end(), last_action.position.begin(),
+                            last_action.position.end());
+
+  full_obs_msg_.full_observation = observation_vector;
+
+  obs_publisher_->publish(full_obs_msg_);
+}
 
 int main(int argc, char **argv)
 {

@@ -24,7 +24,8 @@ class Agent(Node):
         self.get_logger().info("Agent Node started")
 
     def observationCallback(self, msg):
-        print(msg)
+        print(msg.full_observation)
+        print()
 
 
 def main(args=None):
