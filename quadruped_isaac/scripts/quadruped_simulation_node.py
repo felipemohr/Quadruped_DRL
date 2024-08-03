@@ -13,7 +13,6 @@ from omni.isaac.core.robots import Robot
 from omni.isaac.nucleus import get_assets_root_path
 from omni.isaac.core.utils.extensions import enable_extension
 from omni.isaac.core.utils.stage import add_reference_to_stage
-from omni.isaac.core_nodes.scripts.utils import set_target_prims
 
 from omni.isaac.sensor import IMUSensor, ContactSensor
 
@@ -22,8 +21,6 @@ import omni.graph.core as og
 enable_extension("omni.isaac.ros2_bridge")
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool
-from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Twist
 
 simulation_app.update()
@@ -47,7 +44,7 @@ class QuadrupedRobot(Robot):
 
         self._init_position = position
         self._init_orientation = orientation
-        self._prim_path = prim_path
+        self._quadruped_prim_path = prim_path
 
         Robot.__init__(self, prim_path=prim_path, name=name, position=position, orientation=orientation)
 
@@ -68,8 +65,8 @@ class QuadrupedRobot(Robot):
         self.set_joint_velocities(velocities=np.zeros(12))
         self.set_joint_efforts(efforts=np.zeros(12))
 
-    def initialize_imu(self, dt: float) -> None:
-        self._imu_path = self.prim_path + "/imu_link/imu_sensor"
+    def add_imu(self, dt: float) -> None:
+        self._imu_path = self._quadruped_prim_path + "/imu/imu_sensor"
 
         self._imu_sensor = IMUSensor(
             prim_path=self._imu_path,
@@ -81,14 +78,15 @@ class QuadrupedRobot(Robot):
 
         self._sensors.append(self._imu_sensor)
 
-    def initialize_feet_contact(self, dt: float, radius: float) -> None:
+    def add_feet_contact(self, dt: float, radius: float) -> None:
         self._feet_contact = dict()
         self._contact_sensors = dict()
 
         for foot in self.feet:
             self._feet_contact[foot] = False
             self._contact_sensors[foot] = ContactSensor(
-                prim_path=self.prim_path + "/" + foot + "/sensor",
+                prim_path=self._quadruped_prim_path + "/" + foot + "/sensor",
+                name=foot + "_sensor",
                 min_threshold=0,
                 max_threshold=1000000,
                 radius=radius,
@@ -115,8 +113,8 @@ class QuadrupedRobot(Robot):
     def get_angular_velocity(self) -> np.ndarray:
         return super().get_angular_velocity()
 
-    def get_prim_path(self) -> str:
-        return self._prim_path
+    def get_imu_prim_path(self) -> str:
+        return self._imu_path
 
 
 class QuadrupedSimulationNode(Node):
@@ -133,6 +131,9 @@ class QuadrupedSimulationNode(Node):
             position=np.array([0.0, 0.0, 0.50]),
             orientation=np.array([1.0, 0.0, 0.0, 0.0]),
         )
+        self._quadruped.add_imu(dt=1.0 / 400.0)
+        # TODO: Fix contact sensors
+        # self._quadruped.add_feet_contact(dt=1.0 / 400.0, radius=0.03)
 
         self._world = World(physics_dt=1.0 / 400.0, rendering_dt=10.0 / 400.0, stage_units_in_meters=1.0)
         self._world.scene.add_default_ground_plane()
@@ -140,27 +141,13 @@ class QuadrupedSimulationNode(Node):
         self._world.reset()
 
         self._quadruped.initialize_robot()
-        self._quadruped.initialize_imu(dt=1.0 / 400.0)
-        self._quadruped.initialize_feet_contact(dt=1.0 / 400.0, radius=0.03)
 
         self.create_ros2_graphs()
 
-        self._imu_publisher = self.create_publisher(Imu, "imu", 10)
-        self._feet_publisher = dict()
-        for foot in self._quadruped.feet:
-            self._feet_publisher[foot] = self.create_publisher(Bool, foot.lower() + "_contact", 10)
         self._base_vel_publisher = self.create_publisher(Twist, "base_vel", 10)
-
-        self._publish_imu_timer = self.create_timer(0.01, self.publish_imu)
-        self._publish_feet_contact_timer = self.create_timer(0.01, self.publish_feet_contact)
         self._publish_base_velocity_timer = self.create_timer(0.01, self.publish_base_velocity)
 
     def create_ros2_graphs(self) -> None:
-        print(self._quadruped.prim_path)
-        print(self._quadruped.prim_path)
-        print(self._quadruped.prim_path)
-        print(self._quadruped.prim_path)
-        print(self._quadruped.prim_path)
         try:
             self._joints_graph = og.Controller.edit(
                 {"graph_path": "/QuadrupedJoints", "evaluator_name": "execution"},
@@ -186,8 +173,8 @@ class QuadrupedSimulationNode(Node):
                         ("SubscribeJointCmd.outputs:effortCommand", "ArticulationController.inputs:effortCommand"),
                     ],
                     og.Controller.Keys.SET_VALUES: [
-                        ("ArticulationController.inputs:usePath", True),
                         ("ArticulationController.inputs:robotPath", self._quadruped.prim_path),
+                        ("PublishJointState.inputs:targetPrim", self._quadruped.prim_path),
                     ],
                 },
             )
@@ -208,46 +195,40 @@ class QuadrupedSimulationNode(Node):
                         ("Context.outputs:context", "PublishClock.inputs:context"),
                         ("ReadSimTime.outputs:simulationTime", "PublishTF.inputs:timeStamp"),
                     ],
+                    og.Controller.Keys.SET_VALUES: [
+                        ("PublishTF.inputs:targetPrims", self._quadruped.prim_path),
+                    ],
                 },
             )
-            set_target_prims(
-                primPath="/QuadrupedJoints/PublishJointState",
-                targetPrimPaths=[self._quadruped.prim_path],
-                inputName="inputs:targetPrim",
-            )
-            set_target_prims(
-                primPath="/QuadrupedTF/PublishTF",
-                targetPrimPaths=[self._quadruped.prim_path],
-                inputName="inputs:targetPrims",
+            self._imu_graph = og.Controller.edit(
+                {"graph_path": "/QuadrupedIMU", "evaluator_name": "execution"},
+                {
+                    og.Controller.Keys.CREATE_NODES: [
+                        ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
+                        ("ReadSimTime", "omni.isaac.core_nodes.IsaacReadSimulationTime"),
+                        ("Context", "omni.isaac.ros2_bridge.ROS2Context"),
+                        ("SimulationGate", "omni.isaac.core_nodes.IsaacSimulationGate"),
+                        ("ReadIMU", "omni.isaac.sensor.IsaacReadIMU"),
+                        ("PublishIMU", "omni.isaac.ros2_bridge.ROS2PublishImu"),
+                    ],
+                    og.Controller.Keys.CONNECT: [
+                        ("OnPlaybackTick.outputs:tick", "SimulationGate.inputs:execIn"),
+                        ("SimulationGate.outputs:execOut", "ReadIMU.inputs:execIn"),
+                        ("ReadIMU.outputs:execOut", "PublishIMU.inputs:execIn"),
+                        ("ReadIMU.outputs:angVel", "PublishIMU.inputs:angularVelocity"),
+                        ("ReadIMU.outputs:linAcc", "PublishIMU.inputs:linearAcceleration"),
+                        ("ReadIMU.outputs:orientation", "PublishIMU.inputs:orientation"),
+                        ("Context.outputs:context", "PublishIMU.inputs:context"),
+                        ("ReadSimTime.outputs:simulationTime", "PublishIMU.inputs:timeStamp"),
+                    ],
+                    og.Controller.Keys.SET_VALUES: [
+                        ("SimulationGate.inputs:step", 4),
+                        ("ReadIMU.inputs:imuPrim", self._quadruped.get_imu_prim_path()),
+                    ],
+                },
             )
         except Exception as e:
             print(e)
-
-    def publish_imu(self) -> None:
-        imu_data = self._quadruped.get_imu_data()
-
-        imu_msg = Imu()
-        imu_msg.header.stamp = self.get_clock().now().to_msg()
-        imu_msg.header.frame_id = "imu_link"
-        imu_msg.linear_acceleration.x = imu_data["lin_acc"][0].item()
-        imu_msg.linear_acceleration.y = imu_data["lin_acc"][1].item()
-        imu_msg.linear_acceleration.z = imu_data["lin_acc"][2].item()
-        imu_msg.angular_velocity.x = imu_data["ang_vel"][0].item()
-        imu_msg.angular_velocity.y = imu_data["ang_vel"][1].item()
-        imu_msg.angular_velocity.z = imu_data["ang_vel"][2].item()
-        imu_msg.orientation.w = imu_data["orientation"][0].item()
-        imu_msg.orientation.x = imu_data["orientation"][1].item()
-        imu_msg.orientation.y = imu_data["orientation"][2].item()
-        imu_msg.orientation.z = imu_data["orientation"][3].item()
-
-        self._imu_publisher.publish(imu_msg)
-
-    def publish_feet_contact(self) -> None:
-        feet_contact_data = self._quadruped.get_feet_contact_data()
-        for foot, contact in feet_contact_data.items():
-            contact_msg = Bool()
-            contact_msg.data = contact
-            self._feet_publisher[foot].publish(contact_msg)
 
     def publish_base_velocity(self) -> None:
         lin_vel = self._quadruped.get_linear_velocity()
