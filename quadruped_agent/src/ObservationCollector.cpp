@@ -31,20 +31,33 @@ ObservationCollector::ObservationCollector() : Node("observation_collector")
   cmd_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
       "cmd_vel", 10, std::bind(&ObservationCollector::cmdVelCallback, this, _1));
 
-  base_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "base_vel", 10, std::bind(&ObservationCollector::baseVelCallback, this, _1));
+  // TODO: Create parameter
+  if (use_odom)
+  {
+    odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "ground_thruth", 10, std::bind(&ObservationCollector::odometryCallback, this, _1));
+  }
+  else
+  {
+    base_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        "base_vel", 10, std::bind(&ObservationCollector::baseVelCallback, this, _1));
+  }
 
   joint_states_subscriber_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&ObservationCollector::jointStatesCallbadk, this, _1));
 
-  feet_fl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      "fl_foot/contact", 10, std::bind(&ObservationCollector::feetFLContactCallback, this, _1));
-  feet_fr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      "fr_foot/contact", 10, std::bind(&ObservationCollector::feetFRContactCallback, this, _1));
-  feet_rl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      "rl_foot/contact", 10, std::bind(&ObservationCollector::feetRLContactCallback, this, _1));
-  feet_rr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
-      "rr_foot/contact", 10, std::bind(&ObservationCollector::feetRRContactCallback, this, _1));
+  // TODO: Create parameter
+  if (use_foot_contacts)
+  {
+    feet_fl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
+        "fl_foot/contact", 10, std::bind(&ObservationCollector::feetFLContactCallback, this, _1));
+    feet_fr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
+        "fr_foot/contact", 10, std::bind(&ObservationCollector::feetFRContactCallback, this, _1));
+    feet_rl_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
+        "rl_foot/contact", 10, std::bind(&ObservationCollector::feetRLContactCallback, this, _1));
+    feet_rr_subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
+        "rr_foot/contact", 10, std::bind(&ObservationCollector::feetRRContactCallback, this, _1));
+  }
 
   action_subscriber_ = this->create_subscription<quadruped_interfaces::msg::JointsAction>(
       "agent_action", 10, std::bind(&ObservationCollector::lastActionCallback, this, _1));
@@ -82,6 +95,12 @@ void ObservationCollector::cmdVelCallback(const geometry_msgs::msg::Twist::Share
   full_obs_msg_.cmd_vel.linear_velocity_x = msg->linear.x;
   full_obs_msg_.cmd_vel.linear_velocity_y = msg->linear.y;
   full_obs_msg_.cmd_vel.angular_velocity_z = msg->angular.z;
+}
+
+void ObservationCollector::odometryCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+  full_obs_msg_.base_obs.linear_velocity = msg->twist.twist.linear;
+  full_obs_msg_.base_obs.angular_velocity = msg->twist.twist.angular;
 }
 
 void ObservationCollector::baseVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -160,8 +179,11 @@ void ObservationCollector::publishObservation()
   observation_vector.insert(observation_vector.end(), joints_obs.velocity.begin(),
                             joints_obs.velocity.end());
 
-  observation_vector.insert(observation_vector.end(), feet_obs.contact.begin(),
-                            feet_obs.contact.end());
+  if (use_foot_contacts)
+  {
+    observation_vector.insert(observation_vector.end(), feet_obs.contact.begin(),
+                              feet_obs.contact.end());
+  }
 
   observation_vector.insert(observation_vector.end(), last_action.position.begin(),
                             last_action.position.end());

@@ -15,6 +15,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -40,48 +41,63 @@ private:
    * @param msg A shared pointer to the incoming IMU message
    */
   void IMUCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming velocity command data
    *
    * @param msg A shared pointer to the incoming Twist message
    */
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
+  /**
+   * @brief Callback function to collect incoming estimated base velocity data from odometry
+   *
+   * @param msg A shared pointer to the incoming Odometry message
+   */
+  void odometryCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming estimated base velocity data
    *
    * @param msg A shared pointer to the incoming Twist message
    */
   void baseVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming joint states data
    *
    * @param msg A shared pointer to the incoming Joint State message
    */
   void jointStatesCallbadk(const sensor_msgs::msg::JointState::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming front left foot contact data
    *
    * @param msg A shared pointer to the incoming Bool message
    */
   void feetFLContactCallback(const std_msgs::msg::Bool::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming front right foot contact data
    *
    * @param msg A shared pointer to the incoming Bool message
    */
   void feetFRContactCallback(const std_msgs::msg::Bool::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming rear left foot contact data
    *
    * @param msg A shared pointer to the incoming Bool message
    */
   void feetRLContactCallback(const std_msgs::msg::Bool::SharedPtr msg);
+
   /**
    * @brief Callback function to collect incoming rear right foot contact data
    *
    * @param msg A shared pointer to the incoming Bool message
    */
   void feetRRContactCallback(const std_msgs::msg::Bool::SharedPtr msg);
+
   /**
    * @brief Callback function to collect the last action data
    *
@@ -102,6 +118,8 @@ private:
   std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::Imu>> imu_subscriber_;
   /** @brief Subscription to velocity command data */
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::Twist>> cmd_vel_subscriber_;
+  /** @brief Subscription to odometry data */
+  std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry>> odom_subscriber_;
   /** @brief Subscription to base estimated velocity data */
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::Twist>> base_vel_subscriber_;
   /** @brief Subscription to joint states data */
@@ -122,6 +140,11 @@ private:
 
   /** @brief Mapping from joint_name to joint_index to define joint observation order */
   std::map<std::string, int> joint_order_map_;
+
+  /** @brief Either to use or not the odometry to collect estimated base velocity */
+  bool use_odom = true;
+  /** @brief Either to use or not the foot contact booleans */
+  bool use_foot_contacts = false;
 };
 
 #endif // OBSERVATION_COLLECTOR_HPP

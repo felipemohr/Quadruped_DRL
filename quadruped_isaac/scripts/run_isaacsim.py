@@ -1,9 +1,9 @@
+#!/usr/bin/env python3
+
 """
 License: Apache-2.0
 Copyright (c) 2024, Felipe Mohr
 """
-
-#!/usr/bin/env python3
 
 import rclpy
 from rclpy.node import Node

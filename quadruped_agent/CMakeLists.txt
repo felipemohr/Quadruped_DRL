@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
@@ -21,12 +22,12 @@ include_directories(include)
 
 add_executable(observation_collector src/ObservationCollector.cpp)
 ament_target_dependencies(observation_collector 
-  rclcpp tf2 std_msgs sensor_msgs geometry_msgs quadruped_interfaces
+  rclcpp tf2 std_msgs nav_msgs sensor_msgs geometry_msgs quadruped_interfaces
 )
 
 add_executable(agent_controller src/AgentController.cpp)
 ament_target_dependencies(agent_controller 
-  rclcpp trajectory_msgs quadruped_interfaces
+  rclcpp sensor_msgs trajectory_msgs quadruped_interfaces
 )
 
 install(
