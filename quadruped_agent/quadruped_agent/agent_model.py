@@ -14,7 +14,7 @@ from torch import nn
 from collections import OrderedDict
 
 
-def load_model(model_path: str) -> nn.Module:
+def load_model(model_path: str, num_obs: int, num_actions: int) -> nn.Module:
     """Loads a trained model"""
 
     class ActorNN(nn.Module):
@@ -60,7 +60,7 @@ def load_model(model_path: str) -> nn.Module:
     model_loaded = torch.load(model_path)
 
     # Initialize the model
-    model = ActorNN(num_obs=52, num_actions=12, hidden_dims=[128, 128, 128], activation=nn.ELU())
+    model = ActorNN(num_obs=num_obs, num_actions=num_actions, hidden_dims=[128, 128, 128], activation=nn.ELU())
 
     # Extract and load the actors's state dictionary
     actor_state_dict = OrderedDict(
