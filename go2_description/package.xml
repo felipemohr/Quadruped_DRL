@@ -4,7 +4,7 @@
   <name>go2_description</name>
   <version>1.0.0</version>
   <description>URDF Description package for go2 robot (from Unitree Robotics)</description>
-  <maintainer email="TODO@email.com">Felipe Mohr</maintainer>
+  <maintainer email="felipe18mohr@gmail.com">Felipe Mohr</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

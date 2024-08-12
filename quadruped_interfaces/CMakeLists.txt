@@ -11,6 +11,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/QuadrupedKinematics.msg"
   "msg/CommandObservation.msg"
   "msg/BaseObservation.msg"
   "msg/JointsObservation.msg"

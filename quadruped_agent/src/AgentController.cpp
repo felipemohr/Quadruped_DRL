@@ -44,6 +44,8 @@ AgentController::AgentController() : Node("agent_controller")
   RCLCPP_INFO(this->get_logger(), "Agent Controller started");
 }
 
+AgentController::~AgentController() {}
+
 void AgentController::jointActionCallback(
     const quadruped_interfaces::msg::JointsAction::SharedPtr msg)
 {
@@ -92,8 +94,6 @@ void AgentController::publishJointTrajectory(
 
   joint_trajectory_publisher_->publish(joint_trajectory_msg);
 }
-
-AgentController::~AgentController() {}
 
 int main(int argc, char **argv)
 {

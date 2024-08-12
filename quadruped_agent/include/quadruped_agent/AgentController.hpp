@@ -1,7 +1,7 @@
 /**
  * @file AgentController.hpp
  * @author Felipe Mohr (felipe18mohr@gmail.com)
- * @brief Node to control the Agent with trajectory controller
+ * @brief Node to control the Agent with trajectory controller or joint commands
  * @version 1.0
  * @date 2024-07-12
  *
