@@ -41,6 +41,10 @@ AgentController::AgentController() : Node("agent_controller")
       {"RL_hip_joint", 0.1},  {"RL_thigh_joint", 1.0}, {"RL_calf_joint", -1.5},
       {"RR_hip_joint", -0.1}, {"RR_thigh_joint", 1.0}, {"RR_calf_joint", -1.5}};
 
+  joints_order_ = {"FL_hip_joint",   "FL_thigh_joint", "FL_calf_joint",  "FR_hip_joint",
+                   "FR_thigh_joint", "FR_calf_joint",  "RL_hip_joint",   "RL_thigh_joint",
+                   "RL_calf_joint",  "RR_hip_joint",   "RR_thigh_joint", "RR_calf_joint"};
+
   RCLCPP_INFO(this->get_logger(), "Agent Controller started");
 }
 
@@ -59,11 +63,11 @@ void AgentController::publishJointState(
   joint_state_msg.header.stamp = this->get_clock()->now();
 
   size_t idx = 0;
-  for (auto &[joint, position] : default_joint_position_map_)
+  for (auto joint : joints_order_)
   {
     double joint_position = msg->scale * msg->position.at(idx);
     if (msg->use_offset)
-      joint_position += position;
+      joint_position += default_joint_position_map_[joint];
     joint_state_msg.name.push_back(joint);
     joint_state_msg.position.push_back(joint_position);
 
@@ -82,11 +86,12 @@ void AgentController::publishJointTrajectory(
   joint_trajectory_point.time_from_start.nanosec = 0;
 
   size_t idx = 0;
-  for (auto &[joint, position] : default_joint_position_map_)
+  for (auto joint : joints_order_)
   {
     double joint_position = msg->scale * msg->position.at(idx);
     if (msg->use_offset)
-      joint_position += position;
+      joint_position += default_joint_position_map_[joint];
+
     joint_trajectory_point.positions.push_back(joint_position);
     joint_trajectory_msg.joint_names.push_back(joint);
 

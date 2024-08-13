@@ -60,9 +60,9 @@ private:
   /**
    * @brief Callback function to receive inverse kinematics commands and send data to the publisher
    *
-   * @param msg A shared pointer to incoming Joints Action message
+   * @param msg A shared pointer to incoming Quadruped Kinematics message
    */
-  void CmdIKCallback(const quadruped_interfaces::msg::QuadrupedKinematics::SharedPtr msg);
+  void cmdIKCallback(const quadruped_interfaces::msg::QuadrupedKinematics::SharedPtr msg);
 
   /**
    * @brief Get the translation matrix from x, y, z values
@@ -111,8 +111,16 @@ private:
   quadruped_interfaces::msg::JointsAction
   computeQuadrupedJoints(const quadruped_interfaces::msg::QuadrupedKinematics cmd_ik);
 
+  /** @brief Subscription to the Quadruped Kinematics data */
+  std::shared_ptr<rclcpp::Subscription<quadruped_interfaces::msg::QuadrupedKinematics>>
+      quadruped_kinematics_subscriber_;
+
+  /** @brief Publisher for the Joints Action */
+  std::shared_ptr<rclcpp::Publisher<quadruped_interfaces::msg::JointsAction>>
+      joints_action_publisher_;
+
   /** @brief The kinematics parameters of the quadruped robot */
-  KinematicsParameters parameters;
+  KinematicsParameters parameters_;
 };
 
 #endif // INVERSE_KINEMATICS_HPP

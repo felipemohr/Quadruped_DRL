@@ -16,18 +16,35 @@
 #include <cmath>
 #include <memory>
 
+using std::placeholders::_1;
+
 InverseKinematics::InverseKinematics() : Node("inverse_kinematics")
 {
   // TODO: Create ros2 parameters
+  parameters_.body_length = 0.3868;
+  parameters_.body_width = 0.0930;
+  parameters_.body_height = 0.3012;
+  parameters_.leg_l1 = 0.0955;
+  parameters_.leg_l2 = 0.2130;
+  parameters_.leg_l3 = 0.2130;
+
+  quadruped_kinematics_subscriber_ =
+      this->create_subscription<quadruped_interfaces::msg::QuadrupedKinematics>(
+          "cmd_ik", 10, std::bind(&InverseKinematics::cmdIKCallback, this, _1));
+
+  joints_action_publisher_ =
+      this->create_publisher<quadruped_interfaces::msg::JointsAction>("agent_action", 10);
 
   RCLCPP_INFO(this->get_logger(), "Inverse Kinematics started");
 }
 
 InverseKinematics::~InverseKinematics() {}
 
-void InverseKinematics::CmdIKCallback(
+void InverseKinematics::cmdIKCallback(
     const quadruped_interfaces::msg::QuadrupedKinematics::SharedPtr msg)
 {
+  quadruped_interfaces::msg::JointsAction joints_action_msg = this->computeQuadrupedJoints(*msg);
+  joints_action_publisher_->publish(joints_action_msg);
 }
 
 Eigen::Matrix4d InverseKinematics::getTranslationMatrix(const float x, const float y, const float z)
@@ -64,20 +81,20 @@ Eigen::Matrix4d InverseKinematics::getBodyLegTransform(Eigen::Matrix4d bodyTm, L
   switch (leg)
   {
   case Leg::FRONT_LEFT:
-    bodyLegMatrix = bodyTm * this->getTranslationMatrix(parameters.body_length / 2,
-                                                        parameters.body_width / 2, 0);
+    bodyLegMatrix = bodyTm * this->getTranslationMatrix(parameters_.body_length / 2,
+                                                        parameters_.body_width / 2, 0);
     break;
   case Leg::FRONT_RIGHT:
-    bodyLegMatrix = bodyTm * this->getTranslationMatrix(parameters.body_length / 2,
-                                                        -parameters.body_width / 2, 0);
+    bodyLegMatrix = bodyTm * this->getTranslationMatrix(parameters_.body_length / 2,
+                                                        -parameters_.body_width / 2, 0);
     break;
   case Leg::REAR_LEFT:
-    bodyLegMatrix = bodyTm * this->getTranslationMatrix(-parameters.body_length / 2,
-                                                        parameters.body_width / 2, 0);
+    bodyLegMatrix = bodyTm * this->getTranslationMatrix(-parameters_.body_length / 2,
+                                                        parameters_.body_width / 2, 0);
     break;
   case Leg::REAR_RIGHT:
-    bodyLegMatrix = bodyTm * this->getTranslationMatrix(-parameters.body_length / 2,
-                                                        -parameters.body_width / 2, 0);
+    bodyLegMatrix = bodyTm * this->getTranslationMatrix(-parameters_.body_length / 2,
+                                                        -parameters_.body_width / 2, 0);
     break;
   }
 
@@ -89,15 +106,15 @@ InverseKinematics::computeLegJoints(const geometry_msgs::msg::Vector3 foot_pos, 
 {
   int reflect = (leg == Leg::FRONT_LEFT || leg == Leg::REAR_LEFT) ? 1 : -1;
 
-  float a = sqrt(pow(foot_pos.y, 2) + pow(foot_pos.z, 2) - pow(parameters.leg_l1, 2));
+  float a = sqrt(pow(foot_pos.y, 2) + pow(foot_pos.z, 2) - pow(parameters_.leg_l1, 2));
   float A =
-      (pow(a, 2) + pow(foot_pos.x, 2) + pow(parameters.leg_l2, 2) - pow(parameters.leg_l3, 2)) /
-      (2 * parameters.leg_l2 * sqrt(pow(a, 2) + pow(foot_pos.x, 2)));
+      (pow(a, 2) + pow(foot_pos.x, 2) + pow(parameters_.leg_l2, 2) - pow(parameters_.leg_l3, 2)) /
+      (2 * parameters_.leg_l2 * sqrt(pow(a, 2) + pow(foot_pos.x, 2)));
   float B =
-      (pow(a, 2) + pow(foot_pos.x, 2) - pow(parameters.leg_l2, 2) - pow(parameters.leg_l3, 2)) /
-      (2 * parameters.leg_l2 * parameters.leg_l3);
+      (pow(a, 2) + pow(foot_pos.x, 2) - pow(parameters_.leg_l2, 2) - pow(parameters_.leg_l3, 2)) /
+      (2 * parameters_.leg_l2 * parameters_.leg_l3);
 
-  float theta1 = atan2(foot_pos.y, -foot_pos.z) - atan2(reflect * parameters.leg_l1, a);
+  float theta1 = atan2(foot_pos.y, -foot_pos.z) - atan2(reflect * parameters_.leg_l1, a);
   float theta2 = M_PI_2 - atan2(a, foot_pos.x) - atan2(sqrt(1 - pow(A, 2)), A);
   float theta3 = atan2(sqrt(1 - pow(B, 2)), B);
 
@@ -125,17 +142,17 @@ quadruped_interfaces::msg::JointsAction InverseKinematics::computeQuadrupedJoint
   if (cmd_ik.use_foot_transforms)
   {
     Eigen::Matrix4d fl_translation = this->getTranslationMatrix(
-        parameters.body_length / 2, (parameters.body_width / 2 + parameters.leg_l1),
-        -parameters.body_height);
+        parameters_.body_length / 2, (parameters_.body_width / 2 + parameters_.leg_l1),
+        -parameters_.body_height);
     Eigen::Matrix4d fr_translation = this->getTranslationMatrix(
-        parameters.body_length / 2, -(parameters.body_width / 2 + parameters.leg_l1),
-        -parameters.body_height);
+        parameters_.body_length / 2, -(parameters_.body_width / 2 + parameters_.leg_l1),
+        -parameters_.body_height);
     Eigen::Matrix4d rl_translation = this->getTranslationMatrix(
-        -parameters.body_length / 2, (parameters.body_width / 2 + parameters.leg_l1),
-        -parameters.body_height);
+        -parameters_.body_length / 2, (parameters_.body_width / 2 + parameters_.leg_l1),
+        -parameters_.body_height);
     Eigen::Matrix4d rr_translation = this->getTranslationMatrix(
-        -parameters.body_length / 2, -(parameters.body_width / 2 + parameters.leg_l1),
-        -parameters.body_height);
+        -parameters_.body_length / 2, -(parameters_.body_width / 2 + parameters_.leg_l1),
+        -parameters_.body_height);
 
     fl_foot_pos = (fl_translation * fl_foot_pos.homogeneous()).head<3>();
     fr_foot_pos = (fr_translation * fr_foot_pos.homogeneous()).head<3>();
@@ -165,9 +182,9 @@ quadruped_interfaces::msg::JointsAction InverseKinematics::computeQuadrupedJoint
   tf2::toMsg(rr_ik_pos.head(3), rr_pos_vector3);
 
   geometry_msgs::msg::Vector3 fl_joints = this->computeLegJoints(fl_pos_vector3, Leg::FRONT_LEFT);
-  geometry_msgs::msg::Vector3 fr_joints = this->computeLegJoints(fl_pos_vector3, Leg::FRONT_RIGHT);
-  geometry_msgs::msg::Vector3 rl_joints = this->computeLegJoints(fl_pos_vector3, Leg::REAR_LEFT);
-  geometry_msgs::msg::Vector3 rr_joints = this->computeLegJoints(fl_pos_vector3, Leg::REAR_RIGHT);
+  geometry_msgs::msg::Vector3 fr_joints = this->computeLegJoints(fr_pos_vector3, Leg::FRONT_RIGHT);
+  geometry_msgs::msg::Vector3 rl_joints = this->computeLegJoints(rl_pos_vector3, Leg::REAR_LEFT);
+  geometry_msgs::msg::Vector3 rr_joints = this->computeLegJoints(rr_pos_vector3, Leg::REAR_RIGHT);
 
   quadruped_interfaces::msg::JointsAction joint_positions;
   joint_positions.position.at(0) = fl_joints.x;

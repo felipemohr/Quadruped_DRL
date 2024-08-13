@@ -62,6 +62,9 @@ private:
   /** @brief Default joint positions to use as offset */
   std::map<std::string, double> default_joint_position_map_;
 
+  /** @brief Order of the joints */
+  std::vector<std::string> joints_order_;
+
   /** @brief Either to publish JointTrajectory message or JointState message */
   bool use_joint_trajectory = false;
 };
