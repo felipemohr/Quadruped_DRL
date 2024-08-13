@@ -37,6 +37,8 @@ class Agent(Node):
             self.action_tensor = self.model(self.obs_tensor)
 
             action_msg = JointsAction()
+            action_msg.scale = 0.5
+            action_msg.use_offset = True
             action_msg.position = self.action_tensor.numpy().astype(np.float64)
 
             self.action_publisher.publish(action_msg)

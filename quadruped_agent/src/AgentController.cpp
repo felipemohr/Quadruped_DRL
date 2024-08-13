@@ -61,7 +61,9 @@ void AgentController::publishJointState(
   size_t idx = 0;
   for (auto &[joint, position] : default_joint_position_map_)
   {
-    double joint_position = 0.5 * msg->position.at(idx) + position;
+    double joint_position = msg->scale * msg->position.at(idx);
+    if (msg->use_offset)
+      joint_position += position;
     joint_state_msg.name.push_back(joint);
     joint_state_msg.position.push_back(joint_position);
 
@@ -82,7 +84,9 @@ void AgentController::publishJointTrajectory(
   size_t idx = 0;
   for (auto &[joint, position] : default_joint_position_map_)
   {
-    double joint_position = 0.5 * msg->position.at(idx) + position;
+    double joint_position = msg->scale * msg->position.at(idx);
+    if (msg->use_offset)
+      joint_position += position;
     joint_trajectory_point.positions.push_back(joint_position);
     joint_trajectory_msg.joint_names.push_back(joint);
 

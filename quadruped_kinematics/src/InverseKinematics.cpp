@@ -182,6 +182,8 @@ quadruped_interfaces::msg::JointsAction InverseKinematics::computeQuadrupedJoint
   joint_positions.position.at(9) = rr_joints.x;
   joint_positions.position.at(10) = rr_joints.y;
   joint_positions.position.at(11) = rr_joints.z;
+  joint_positions.use_offset = false;
+  joint_positions.scale = 1.0;
 
   return joint_positions;
 }
