@@ -49,6 +49,19 @@ public:
     double leg_l2;
     /** @brief Distance between calf joints and the feet */
     double leg_l3;
+
+    /** @brief Minimum angle for hip joints, in radians */
+    double min_hip;
+    /** @brief Maximum angle for hip joints, in radians */
+    double max_hip;
+    /** @brief Minimum angle for thigh joints, in radians */
+    double min_thigh;
+    /** @brief Maximum angle for thigh joints, in radians */
+    double max_thigh;
+    /** @brief Minimum angle for calf joints, in radians */
+    double min_calf;
+    /** @brief Maximum angle for calf joints, in radians */
+    double max_calf;
   };
 
   /** @brief Construct a new Inverse Kinematics object */
@@ -110,6 +123,23 @@ private:
    */
   quadruped_interfaces::msg::JointsAction
   computeQuadrupedJoints(const quadruped_interfaces::msg::QuadrupedKinematics cmd_ik);
+
+  /**
+   * @brief Check if there is any NaN value among the joint angles computed with inverse kinematics
+   *
+   * @param joint_angles The joint angles computed by inverse kinematics
+   * @return Returns true if there is any NaN value among the joint angles
+   */
+  bool checkJointAnglesNaN(const quadruped_interfaces::msg::JointsAction joint_angles);
+
+  /**
+   * @brief Check if there is any value out of range among the joint angles computed with inverse
+   * kinematics
+   *
+   * @param joint_angles The joint angles computed by inverse kinematics
+   * @return Returns true if there is any value out of range among the joint angles
+   */
+  bool checkJointAnglesRange(const quadruped_interfaces::msg::JointsAction joint_angles);
 
   /** @brief Subscription to the Quadruped Kinematics data */
   std::shared_ptr<rclcpp::Subscription<quadruped_interfaces::msg::QuadrupedKinematics>>

@@ -27,6 +27,12 @@ InverseKinematics::InverseKinematics() : Node("inverse_kinematics")
   parameters_.leg_l1 = 0.0955;
   parameters_.leg_l2 = 0.2130;
   parameters_.leg_l3 = 0.2130;
+  parameters_.min_hip = -1.0472;
+  parameters_.max_hip = 1.0472;
+  parameters_.min_thigh = -1.5708;
+  parameters_.max_thigh = 3.4907;
+  parameters_.min_calf = -2.7227;
+  parameters_.max_calf = -0.83776;
 
   quadruped_kinematics_subscriber_ =
       this->create_subscription<quadruped_interfaces::msg::QuadrupedKinematics>(
@@ -44,6 +50,21 @@ void InverseKinematics::cmdIKCallback(
     const quadruped_interfaces::msg::QuadrupedKinematics::SharedPtr msg)
 {
   quadruped_interfaces::msg::JointsAction joints_action_msg = this->computeQuadrupedJoints(*msg);
+
+  if (this->checkJointAnglesNaN(joints_action_msg))
+  {
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 3000,
+                         "NaN value computed, ignoring");
+    return;
+  }
+
+  if (this->checkJointAnglesRange(joints_action_msg))
+  {
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 3000,
+                         "Joint value out of range computed, ignoring");
+    return;
+  }
+
   joints_action_publisher_->publish(joints_action_msg);
 }
 
@@ -203,6 +224,38 @@ quadruped_interfaces::msg::JointsAction InverseKinematics::computeQuadrupedJoint
   joint_positions.scale = 1.0;
 
   return joint_positions;
+}
+
+bool InverseKinematics::checkJointAnglesNaN(
+    const quadruped_interfaces::msg::JointsAction joint_angles)
+{
+  for (auto angle : joint_angles.position)
+  {
+    if (std::isnan(angle))
+      return true;
+  }
+  return false;
+}
+
+bool InverseKinematics::checkJointAnglesRange(
+    const quadruped_interfaces::msg::JointsAction joint_angles)
+{
+  // TODO: Fix if joint order is different (maybe creating LegJoints and QuadrupedJoints)
+  for (int j = 0; j < 4; j++)
+  {
+    if (joint_angles.position.at(3 * j) < parameters_.min_hip ||
+        joint_angles.position.at(3 * j) > parameters_.max_hip)
+      return true;
+
+    if (joint_angles.position.at(3 * j + 1) < parameters_.min_thigh ||
+        joint_angles.position.at(3 * j + 1) > parameters_.max_thigh)
+      return true;
+
+    if (joint_angles.position.at(3 * j + 2) < parameters_.min_calf ||
+        joint_angles.position.at(3 * j + 2) > parameters_.max_calf)
+      return true;
+  }
+  return false;
 }
 
 int main(int argc, char **argv)
