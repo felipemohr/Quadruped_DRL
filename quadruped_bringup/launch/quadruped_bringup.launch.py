@@ -6,6 +6,7 @@ from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 
+# TODO: use_sim_time
 def generate_launch_description():
 
     quadruped_control_pkg_share = FindPackageShare("quadruped_control").find("quadruped_control")

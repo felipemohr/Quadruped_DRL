@@ -9,6 +9,8 @@
  *
  */
 
+#include "rclcpp/rclcpp.hpp"
+
 #include "quadruped_kinematics/InverseKinematics.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
 
