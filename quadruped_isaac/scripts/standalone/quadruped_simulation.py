@@ -10,7 +10,7 @@ simulation_app = SimulationApp({"headless": False})
 from omni.isaac.core import World
 from omni.isaac.core.robots import Robot
 
-from omni.isaac.nucleus import get_assets_root_path
+from omni.isaac.nucleus import get_assets_root_path, get_server_path, get_url_root
 from omni.isaac.core.utils.extensions import enable_extension
 from omni.isaac.core.utils.stage import add_reference_to_stage
 
@@ -22,7 +22,7 @@ enable_extension("omni.isaac.ros2_bridge")
 
 simulation_app.update()
 
-from typing import Optional, Sequence
+from typing import Union, Optional
 
 import numpy as np
 
@@ -33,19 +33,29 @@ class QuadrupedRobot(Robot):
         usd_path: str,
         prim_path: str = "/World/Quadruped",
         name: str = "quadruped",
-        position: Optional[Sequence[float]] = np.array([0.0, 0.0, 0.5], dtype=np.float32),
-        orientation: Optional[Sequence[float]] = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        position: Optional[np.ndarray] = np.array([0.0, 0.0, 0.5], dtype=np.float32),
+        orientation: Optional[np.ndarray] = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        default_joint_pos: Optional[np.ndarray] = np.array(
+            [0, 0, 0, 0, np.pi / 4, np.pi / 4, np.pi / 4, np.pi / 4, -np.pi / 2, -np.pi / 2, -np.pi / 2, -np.pi / 2],
+            dtype=np.float32,
+        ),
+        feet: Optional[np.ndarray] = np.array(["FL_foot", "FR_foot", "RL_foot", "RR_foot"], dtype=str),
+        kps: Optional[Union[np.ndarray, float]] = 100.0,
+        kds: Optional[Union[np.ndarray, float]] = 2.0,
     ) -> None:
 
         add_reference_to_stage(usd_path=usd_path, prim_path=prim_path)
+
+        Robot.__init__(self, prim_path=prim_path, name=name, position=position, orientation=orientation)
 
         self._init_position = position
         self._init_orientation = orientation
         self._quadruped_prim_path = prim_path
 
-        Robot.__init__(self, prim_path=prim_path, name=name, position=position, orientation=orientation)
-
-        self.feet = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+        self._default_joint_pos = default_joint_pos
+        self._feet = feet
+        self._kps = kps
+        self._kds = kds
 
     def reset_robot(self) -> None:
         self.set_world_pose(position=self._init_position, orientation=self._init_orientation)
@@ -54,11 +64,8 @@ class QuadrupedRobot(Robot):
         self.initialize_joints()
 
     def initialize_joints(self) -> None:
-        joint_pos = np.array(
-            [0, 0, 0, 0, np.pi / 4, np.pi / 4, np.pi / 4, np.pi / 4, -np.pi / 2, -np.pi / 2, -np.pi / 2, -np.pi / 2],
-            dtype=np.float32,
-        )
-        self.set_joint_positions(positions=joint_pos)
+        self.get_articulation_controller().set_gains(kps=self._kps, kds=self._kds)
+        self.set_joint_positions(positions=self._default_joint_pos)
         self.set_joint_velocities(velocities=np.zeros(12))
         self.set_joint_efforts(efforts=np.zeros(12))
 
@@ -79,7 +86,7 @@ class QuadrupedRobot(Robot):
         self._feet_contact = dict()
         self._contact_sensors = dict()
 
-        for foot in self.feet:
+        for foot in self._feet:
             self._feet_contact[foot] = False
             self._contact_sensors[foot] = ContactSensor(
                 prim_path=self._quadruped_prim_path + "/" + foot + "/sensor",
@@ -96,7 +103,7 @@ class QuadrupedRobot(Robot):
         return frame
 
     def get_feet_contact_data(self) -> dict:
-        for foot in self.feet:
+        for foot in self._feet:
             frame = self._contact_sensors[foot].get_current_frame()
             if "in_contact" in frame.keys():
                 self._feet_contact[foot] = frame["in_contact"]
@@ -246,19 +253,6 @@ class QuadrupedRobot(Robot):
             print(e)
 
 
-def run_simulation(world: World) -> None:
-    reset_needed = False
-    while simulation_app.is_running():
-        world.step(render=True)
-        if world.is_stopped() and not reset_needed:
-            reset_needed = True
-        if world.is_playing():
-            if reset_needed:
-                world.reset()
-                reset_needed = False
-    simulation_app.close()
-
-
 assets_root_path = get_assets_root_path()
 go2_asset_path = assets_root_path + "/Isaac/Robots/Unitree/Go2/go2.usd"
 
@@ -278,9 +272,35 @@ go2.create_imu_graph()
 go2.create_tf_graph()
 go2.create_odom_graph()
 
+
+def run_simulation(world: World) -> None:
+
+    reset_needed = False
+    while simulation_app.is_running():
+        world.step(render=True)
+        if world.is_stopped() and not reset_needed:
+            reset_needed = True
+        if world.is_playing():
+            if reset_needed:
+                world.reset()
+                reset_needed = False
+    simulation_app.close()
+
+
 if __name__ == "__main__":
+
     world = World(physics_dt=1.0 / 400.0, rendering_dt=10.0 / 400.0, stage_units_in_meters=1.0)
-    world.scene.add_default_ground_plane()
+    # world.scene.add_default_ground_plane()
+
+    # cloudy_sky_path = get_server_path() + "/Environments/2024_1/DomeLights/Dynamic/CloudySky.usd"
+    # add_reference_to_stage(usd_path=cloudy_sky_path, prim_path="/World/CloudySky")
+
+    # flat_plane_asset_path = assets_root_path + "/Isaac/Environments/Terrains/flat_plane.usd"
+    # add_reference_to_stage(usd_path=flat_plane_asset_path, prim_path="/World/FlatPlane")
+
+    warehouse_asset_path = assets_root_path + "/Isaac/Environments/Simple_Warehouse/warehouse.usd"
+    add_reference_to_stage(usd_path=warehouse_asset_path, prim_path="/World/Warehouse")
+
     world.scene.add(go2)
     world.reset()
 
