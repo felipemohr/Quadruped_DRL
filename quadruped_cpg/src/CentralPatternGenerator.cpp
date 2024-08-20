@@ -36,13 +36,10 @@ CentralPatternGenerator::CentralPatternGenerator() : Node("central_pattern_gener
   convergence_factor_a_ = 50.0;
   coupling_weight_ = 1.0;
   amplitude_mu_ = 1.0;
-  swing_frequency_ = 3.0;
-  stance_frequency_ = 1.5;
-  ground_clearance_ = 0.07;
-  ground_penetration_ = 0.002;
-
-  d_step_x_ = 0.10;
-  d_step_y_ = 0.00;
+  swing_frequency_ = 2.0;
+  stance_frequency_ = 2.0;
+  ground_clearance_ = 0.05;
+  ground_penetration_ = 0.005;
 
   amplitude_r_ = Eigen::Vector4d::Random();
   phase_theta_ = Eigen::Vector4d::Random();
@@ -56,7 +53,23 @@ CentralPatternGenerator::~CentralPatternGenerator() {}
 
 void CentralPatternGenerator::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  return;
+  if (abs(msg->linear.x) < 0.1 && abs(msg->linear.y) < 0.1 && abs(msg->angular.z) < M_PI / 8.0)
+  {
+    d_step_x_ = Eigen::Vector4d::Zero();
+    d_step_y_ = Eigen::Vector4d::Zero();
+    return;
+  }
+
+  // TODO: Read parameter
+  double body_length = 0.3868;
+
+  // TODO: Fix calculation to achieve desired velocity
+  d_step_x_ = Eigen::Vector4d::Constant(msg->linear.x / 10.0);
+  d_step_y_ = Eigen::Vector4d::Constant(msg->linear.y / 10.0);
+  d_step_y_(0) += msg->angular.z * body_length / 2 / (2 * M_PI);
+  d_step_y_(1) -= msg->angular.z * body_length / 2 / (2 * M_PI);
+  d_step_y_(2) += msg->angular.z * body_length / 2 / (2 * M_PI);
+  d_step_y_(3) -= msg->angular.z * body_length / 2 / (2 * M_PI);
 }
 
 void CentralPatternGenerator::cmdIKCallback()
@@ -64,8 +77,6 @@ void CentralPatternGenerator::cmdIKCallback()
   float dt = this->get_clock()->now().seconds() - last_time_.seconds();
 
   auto [feet_x, feet_y, feet_z] = this->updateCPG(dt);
-
-  std::cout << feet_x(0) << std::endl;
 
   quadruped_interfaces::msg::QuadrupedKinematics cmd_ik_msg_;
   cmd_ik_msg_.use_foot_transforms = true;
@@ -113,11 +124,11 @@ FeetPositionTuple CentralPatternGenerator::updateCPG(double dt)
   ground_multiplier_ = phase_theta_.unaryExpr(
       [this](double x) { return sin(x) > 0 ? ground_clearance_ : ground_penetration_; });
 
-  Eigen::Vector4d feet_x = -d_step_x_ * amplitude_r_.array() * phase_theta_.array().cos();
-  Eigen::Vector4d feet_y = -d_step_y_ * amplitude_r_.array() * phase_theta_.array().cos();
+  Eigen::Vector4d feet_x = -d_step_x_.array() * amplitude_r_.array() * (phase_theta_.array().cos());
+  Eigen::Vector4d feet_y = -d_step_y_.array() * amplitude_r_.array() * phase_theta_.array().cos();
   Eigen::Vector4d feet_z = ground_multiplier_.array() * phase_theta_.array().sin();
 
-  if (d_step_x_ == 0.0)
+  if ((d_step_x_ == Eigen::Vector4d::Zero()) && (d_step_y_ == Eigen::Vector4d::Zero()))
     feet_z = Eigen::Vector4d::Zero();
 
   last_time_ = this->get_clock()->now();
